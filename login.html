@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Utility Bill Suite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --blue: #0066ff;
+      --light-blue: #00a2ff;
+      --deep: #002266;
+      --bg: #f0f5ff;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Rajdhani',sans-serif;
+      background:var(--bg);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .card{
+      background:#fff;
+      border:1px solid rgba(0,102,255,0.18);
+      border-radius:20px;
+      padding:48px 40px;
+      width:100%;
+      max-width:420px;
+      box-shadow:0 12px 40px rgba(0,102,255,0.1);
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,var(--blue),var(--light-blue),var(--blue));
+    }
+    .logo{
+      text-align:center;margin-bottom:32px;
+    }
+    .logo-ring{
+      width:64px;height:64px;border-radius:50%;
+      border:2px solid var(--blue);
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:26px;margin-bottom:12px;
+      animation:spin 10s linear infinite;
+    }
+    @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    .logo h2{
+      font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;
+      letter-spacing:3px;
+      background:linear-gradient(135deg,var(--deep),var(--blue));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+
+    /* TABS */
+    .tabs{display:flex;gap:0;margin-bottom:28px;border:1px solid rgba(0,102,255,0.2);border-radius:8px;overflow:hidden;}
+    .tab-btn{
+      flex:1;padding:10px;font-family:'Orbitron',monospace;font-size:0.65rem;
+      letter-spacing:2px;border:none;cursor:pointer;
+      background:transparent;color:rgba(0,34,102,0.5);transition:all .25s;
+    }
+    .tab-btn.active{background:var(--blue);color:#fff;}
+
+    /* PANELS */
+    .panel{display:none;} .panel.active{display:block;}
+
+    /* FORM */
+    .field{margin-bottom:16px;}
+    label{display:block;font-size:0.78rem;letter-spacing:2px;font-weight:600;
+          color:var(--deep);margin-bottom:6px;font-family:'Share Tech Mono',monospace;}
+    input[type=text],input[type=email],input[type=password]{
+      width:100%;padding:11px 14px;border:1px solid rgba(0,102,255,0.25);
+      border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:1rem;
+      background:#f8faff;outline:none;transition:border .2s;
+    }
+    input:focus{border-color:var(--blue);background:#fff;}
+
+    .btn{
+      width:100%;padding:13px;font-family:'Orbitron',monospace;font-size:0.75rem;
+      letter-spacing:3px;font-weight:700;border:none;border-radius:8px;cursor:pointer;
+      background:var(--blue);color:#fff;margin-top:8px;
+      transition:all .25s;
+    }
+    .btn:hover{background:#0044cc;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,102,255,0.3);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+    .btn-outline{
+      background:transparent;border:1px solid rgba(0,102,255,0.3);color:var(--blue);
+    }
+    .btn-outline:hover{background:rgba(0,102,255,0.05);}
+
+    .divider{
+      text-align:center;margin:16px 0;font-size:0.75rem;letter-spacing:2px;
+      color:rgba(0,34,102,0.4);font-family:'Share Tech Mono',monospace;
+      position:relative;
+    }
+    .divider::before,.divider::after{
+      content:'';position:absolute;top:50%;width:38%;height:1px;
+      background:rgba(0,102,255,0.15);
+    }
+    .divider::before{left:0;} .divider::after{right:0;}
+
+    .google-btn{
+      width:100%;padding:12px;border:1px solid rgba(0,102,255,0.2);
+      background:#fff;border-radius:8px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:600;
+      color:var(--deep);transition:all .2s;
+    }
+    .google-btn:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(0,102,255,0.1);}
+    .google-btn svg{width:20px;height:20px;}
+
+    .msg{
+      padding:10px 14px;border-radius:8px;margin-bottom:14px;
+      font-size:0.85rem;letter-spacing:1px;font-family:'Share Tech Mono',monospace;
+    }
+    .msg.error{background:#fff0f0;border:1px solid #ffa0a0;color:#c00;}
+    .msg.success{background:#f0fff5;border:1px solid #80e0a0;color:#006620;}
+
+    .forgot-link{
+      display:block;text-align:right;font-size:0.78rem;color:var(--blue);
+      text-decoration:none;margin-top:4px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;
+    }
+    .forgot-link:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-ring">⚡</div>
+    <h2>UTILITY SUITE</h2>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('login')">LOGIN</button>
+    <button class="tab-btn" onclick="showTab('register')">REGISTER</button>
+    <button class="tab-btn" onclick="showTab('forgot')">FORGOT PW</button>
+  </div>
+
+  <!-- ── LOGIN ── -->
+  <div class="panel active" id="panel-login">
+    <div id="login-msg"></div>
+    <div class="field">
+      <label>EMAIL</label>
+      <input type="email" id="l-email" placeholder="you@example.com"/>
+    </div>
+    <div class="field">
+      <label>PASSWORD</label>
+      <input type="password" id="l-pass" placeholder="••••••••"/>
+      <a href="#" class="forgot-link" onclick="showTab('forgot');return false;">Forgot password?</a>
+    </div>
+    <button class="btn" onclick="doLogin()">LOGIN ▶</button>
+    <div class="divider">OR</div>
+    <button class="google-btn" onclick="location.href='/auth/google'">
+      <svg viewBox="0 0 48 48"><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.6H24v8.7h12.7c-.5 3-2.2 5.5-4.7 7.2v6h7.6c4.5-4.1 7-10.2 7-17.3z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.6-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9H2.7v6.2C6.6 42.5 14.7 48 24 48z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6V13.2H2.7C1 16.5 0 20.1 0 24s1 7.5 2.7 10.8l7.8-6.2z"/><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.7 0 6.6 5.5 2.7 13.2l7.8 6.2C12.4 13.7 17.7 9.5 24 9.5z"/></svg>
+      Continue with Google
+    </button>
+  </div>
+
+  <!-- ── REGISTER ── -->
+  <div class="panel" id="panel-register">
+    <div id="reg-msg"></div>
+    <div class="field"><label>FULL NAME</label><input type="text" id="r-name" placeholder="Your Name"/></div>
+    <div class="field"><label>EMAIL</label><input type="email" id="r-email" placeholder="you@example.com"/></div>
+    <div class="field"><label>PASSWORD</label><input type="password" id="r-pass" placeholder="Min 6 characters"/></div>
+    <button class="btn" onclick="doRegister()">CREATE ACCOUNT ▶</button>
+    <div class="divider">OR</div>
+    <button class="google-btn" onclick="location.href='/auth/google'">
+      <svg viewBox="0 0 48 48"><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.6H24v8.7h12.7c-.5 3-2.2 5.5-4.7 7.2v6h7.6c4.5-4.1 7-10.2 7-17.3z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.6-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9H2.7v6.2C6.6 42.5 14.7 48 24 48z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6V13.2H2.7C1 16.5 0 20.1 0 24s1 7.5 2.7 10.8l7.8-6.2z"/><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.7 0 6.6 5.5 2.7 13.2l7.8 6.2C12.4 13.7 17.7 9.5 24 9.5z"/></svg>
+      Sign up with Google
+    </button>
+  </div>
+
+  <!-- ── FORGOT PASSWORD ── -->
+  <div class="panel" id="panel-forgot">
+    <div id="forgot-msg"></div>
+    <p style="font-size:.85rem;color:rgba(0,34,102,.6);margin-bottom:16px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;">
+      Enter your email and we'll send a password reset link.
+    </p>
+    <div class="field"><label>EMAIL</label><input type="email" id="f-email" placeholder="you@example.com"/></div>
+    <button class="btn" onclick="doForgot()">SEND RESET LINK</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="showTab('login')">← BACK TO LOGIN</button>
+  </div>
+
+  <!-- ── RESET PASSWORD (shown via URL param) ── -->
+  <div class="panel" id="panel-reset">
+    <div id="reset-msg"></div>
+    <p style="font-size:.85rem;color:rgba(0,34,102,.6);margin-bottom:16px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">
+      Enter your new password below.
+    </p>
+    <div class="field"><label>NEW PASSWORD</label><input type="password" id="rp-pass" placeholder="Min 6 characters"/></div>
+    <div class="field"><label>CONFIRM PASSWORD</label><input type="password" id="rp-confirm" placeholder="Repeat password"/></div>
+    <button class="btn" onclick="doReset()">SET NEW PASSWORD ▶</button>
+  </div>
+</div>
+
+<script>
+  const RESET_TOKEN = "{{ reset_token or '' }}";
+  const RESET_ERROR = "{{ reset_error or '' }}";
+
+  function showTab(t) {
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+      b.classList.toggle('active', ['login','register','forgot'][i]===t);
+    });
+    ['login','register','forgot','reset'].forEach(p=>{
+      document.getElementById('panel-'+p).classList.toggle('active', p===t);
+    });
+  }
+
+  // Auto-show reset panel if token present
+  window.addEventListener('load', ()=>{
+    if(RESET_TOKEN) showTab('reset');
+    if(RESET_ERROR) { showTab('login'); showMsg('login-msg','error',RESET_ERROR); }
+  });
+
+  function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.innerHTML = `<div class="msg ${type}">${text}</div>`;
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('l-email').value.trim();
+    const pass  = document.getElementById('l-pass').value;
+    if(!email||!pass) return showMsg('login-msg','error','Please fill all fields.');
+    const r = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const d = await r.json();
+    if(d.error) return showMsg('login-msg','error',d.error);
+    if(d.role==='admin') location.href='/admin';
+    else location.href='/calculator';
+  }
+
+  async function doRegister() {
+    const name  = document.getElementById('r-name').value.trim();
+    const email = document.getElementById('r-email').value.trim();
+    const pass  = document.getElementById('r-pass').value;
+    if(!name||!email||!pass) return showMsg('reg-msg','error','Please fill all fields.');
+    const r = await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass})});
+    const d = await r.json();
+    if(d.error) return showMsg('reg-msg','error',d.error);
+    location.href='/calculator';
+  }
+
+  async function doForgot() {
+    const email = document.getElementById('f-email').value.trim();
+    if(!email) return showMsg('forgot-msg','error','Enter your email.');
+    const r = await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d = await r.json();
+    // For demo — show reset URL. In production, this would be emailed.
+    if(d.reset_url) {
+      showMsg('forgot-msg','success',`Reset link (demo): <a href="${d.reset_url}" style="color:var(--blue)">${d.reset_url}</a>`);
+    } else {
+      showMsg('forgot-msg','success', d.message || 'If that email exists, a reset link was sent.');
+    }
+  }
+
+  async function doReset() {
+    const pass    = document.getElementById('rp-pass').value;
+    const confirm = document.getElementById('rp-confirm').value;
+    if(!pass||!confirm) return showMsg('reset-msg','error','Fill both fields.');
+    if(pass!==confirm)  return showMsg('reset-msg','error','Passwords do not match.');
+    const r = await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:RESET_TOKEN,password:pass})});
+    const d = await r.json();
+    if(d.error) return showMsg('reset-msg','error',d.error);
+    showMsg('reset-msg','success','Password updated! Redirecting to login…');
+    setTimeout(()=>{ location.href='/login'; }, 1800);
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Enter') {
+      const active = document.querySelector('.panel.active').id;
+      if(active==='panel-login') doLogin();
+      else if(active==='panel-register') doRegister();
+      else if(active==='panel-forgot') doForgot();
+      else if(active==='panel-reset') doReset();
+    }
+  });
+</script>
+</body>
+</html>

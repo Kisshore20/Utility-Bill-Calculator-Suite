@@ -1,0 +1,323 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — Utility Suite</title>
+  <style>
+    body{font-family:Inter,system-ui,sans-serif;background:#eef2ff;color:#111;margin:0;padding:0}
+    .page{max-width:1180px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+    h1{font-size:1.8rem;margin:0}
+    .pill{padding:8px 14px;border-radius:999px;background:#eef2ff;color:#0b3d91;font-weight:700;border:1px solid #cdd7f5}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:none;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;text-decoration:none}
+    .card{background:#fff;border:1px solid #dbe5ff;border-radius:18px;padding:22px;box-shadow:0 18px 50px rgba(15,23,42,.06);margin-bottom:24px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+    .full{grid-column:1/-1}
+    .table-card table{width:100%;border-collapse:collapse;margin-top:14px}
+    .table-card th,.table-card td{padding:12px 10px;text-align:left;border-bottom:1px solid #eef2ff}
+    .table-card pre{margin:0;white-space:pre-wrap;word-break:break-word;font-size:0.9rem;color:#334155}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #eef2ff}
+    th{font-size:.8rem;text-transform:uppercase;color:#475569;letter-spacing:.08em}
+    td{font-size:.95rem;color:#0f172a}
+    .small{font-size:.9rem;color:#475569}
+    .field{display:grid;gap:10px;margin-bottom:16px}
+    label{font-size:.82rem;font-weight:700;color:#334155}
+    input,select{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:12px 14px;font-size:1rem}
+    .notice{margin-bottom:16px;padding:14px 16px;border-radius:14px;background:#eff6ff;color:#1e3a8a;border:1px solid #dbeafe}
+    .right{text-align:right}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Admin Dashboard</h1>
+        <div class="pill">Signed in as {{ session.get('name') }}</div>
+      </div>
+      <a class="btn" href="/logout">Logout</a>
+    </header>
+
+    <div class="grid">
+      <section class="card table-card">
+        <h2>Registered Users</h2>
+        <p class="small">Displays each registered user with role, registration date, and last login.</p>
+        <button class="btn" onclick="loadUsers()">Refresh Users</button>
+        <div id="users" style="margin-top:18px"></div>
+      </section>
+
+      <section class="card table-card">
+        <h2>Calculation History</h2>
+        <p class="small">Shows recent calculator usage by all users.</p>
+        <button class="btn" onclick="loadHistory()">Refresh History</button>
+        <div id="history" style="margin-top:18px"></div>
+      </section>
+
+      <section class="card">
+        <h2>Override Rate</h2>
+        <p class="small">Update a rate override by bill type, key, and value.</p>
+        <div class="field">
+          <label for="override-bill-type">Bill Type</label>
+          <select id="override-bill-type">
+            <option value="electricity">electricity</option>
+            <option value="water">water</option>
+            <option value="gas">gas</option>
+            <option value="internet">internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="override-key-name">Key Name</label>
+          <input id="override-key-name" placeholder="e.g. fixed_charge_domestic" />
+        </div>
+        <div class="field">
+          <label for="override-value">Value</label>
+          <input id="override-value" placeholder="e.g. 120 or 5" />
+        </div>
+        <button class="btn" onclick="saveOverride()">Save Override</button>
+        <div id="override-result" style="margin-top:14px"></div>
+      </section>
+
+      <section class="card">
+        <h2>Electricity Slab Override</h2>
+        <p class="small">Edit a state's electricity slab table for a consumer type.</p>
+        <div class="field">
+          <label for="slab-state">State</label>
+          <select id="slab-state">
+            <option value="Tamil Nadu">Tamil Nadu</option>
+            <option value="Karnataka">Karnataka</option>
+            <option value="Maharashtra">Maharashtra</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Uttar Pradesh">Uttar Pradesh</option>
+            <option value="Gujarat">Gujarat</option>
+            <option value="Rajasthan">Rajasthan</option>
+            <option value="Punjab">Punjab</option>
+            <option value="Haryana">Haryana</option>
+            <option value="Bihar">Bihar</option>
+            <option value="West Bengal">West Bengal</option>
+            <option value="Assam">Assam</option>
+            <option value="Telangana">Telangana</option>
+            <option value="Madhya Pradesh">Madhya Pradesh</option>
+            <option value="Chhattisgarh">Chhattisgarh</option>
+            <option value="Jharkhand">Jharkhand</option>
+            <option value="Odisha">Odisha</option>
+            <option value="Kerala">Kerala</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="slab-consumer-type">Consumer Type</label>
+          <select id="slab-consumer-type">
+            <option value="domestic">domestic</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="slab-values">Slab JSON</label>
+          <textarea id="slab-values" rows="6" style="width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:12px 14px;font-size:1rem;">[{"limit":100,"rate":3.46},{"limit":300,"rate":7.05},{"limit":500,"rate":8.5},{"limit":"∞","rate":10.0}]</textarea>
+        </div>
+        <button class="btn" onclick="saveSlabOverride()">Save Slab Override</button>
+        <div id="slab-result" style="margin-top:14px"></div>
+      </section>
+
+      <section class="card full table-card">
+        <h2>Rate Settings</h2>
+        <p class="small">Current overrides and default values for all bill types.</p>
+        <button class="btn" onclick="loadRates()">Refresh Rates</button>
+        <div id="rates" style="margin-top:18px"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    function formatDate(value) {
+      if (!value) return '-';
+      const dt = new Date(value);
+      return Number.isNaN(dt.getTime()) ? value : dt.toLocaleString();
+    }
+
+    async function loadUsers() {
+      const el = document.getElementById('users');
+      el.innerHTML = '<div class="notice">Loading users…</div>';
+      const res = await fetch('/api/admin/users');
+      if (!res.ok) {
+        el.innerHTML = `<div class="notice">Unable to load users: ${res.status}</div>`;
+        return;
+      }
+      const users = await res.json();
+      if (!users.length) {
+        el.innerHTML = '<div class="notice">No users found.</div>';
+        return;
+      }
+      const rows = users.map(u => `
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>${u.role}</td>
+          <td>${formatDate(u.created_at)}</td>
+          <td>${formatDate(u.last_login)}</td>
+        </tr>
+      `).join('');
+      el.innerHTML = `
+        <div class="notice" style="padding:0;border:none;box-shadow:none;">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Last login</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function loadRates() {
+      const el = document.getElementById('rates');
+      el.innerHTML = '<div class="notice">Loading rates…</div>';
+      const res = await fetch('/api/admin/rates');
+      if (!res.ok) {
+        el.innerHTML = `<div class="notice">Unable to load rates: ${res.status}</div>`;
+        return;
+      }
+      const data = await res.json();
+      const overrideRows = Object.entries(data.overrides || {}).map(([key,value]) => `
+        <tr><td>${key}</td><td>${JSON.stringify(value)}</td></tr>
+      `).join('') || '<tr><td colspan="2">No overrides defined</td></tr>';
+
+      const defaultSections = Object.entries(data.defaults || {}).map(([section,items]) => {
+        const rows = Object.entries(items).map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+        return `
+          <div style="margin-top:18px">
+            <strong>${section}</strong>
+            <table><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table>
+          </div>
+        `;
+      }).join('');
+
+      const electricitySections = Object.entries(data.electricity_rates || {}).map(([state, detail]) => {
+        const rows = (detail.domestic || []).map(item => `<tr><td>${item.limit}</td><td>${item.rate}</td></tr>`).join('');
+        return `
+          <div style="margin-top:18px">
+            <strong>${state}</strong>
+            <table><thead><tr><th>Limit</th><th>Rate</th></tr></thead><tbody>${rows}</tbody></table>
+          </div>
+        `;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="card" style="margin-bottom:18px;">
+          <h3>Current Overrides</h3>
+          <table><thead><tr><th>Override</th><th>Value</th></tr></thead><tbody>${overrideRows}</tbody></table>
+        </div>
+        <div class="card">
+          <h3>Default Values</h3>
+          ${defaultSections}
+        </div>
+        <div class="card" style="margin-top:18px;">
+          <h3>Electricity Tables</h3>
+          ${electricitySections}
+        </div>
+      `;
+    }
+
+    async function saveOverride() {
+      const billType = document.getElementById('override-bill-type').value;
+      const keyName = document.getElementById('override-key-name').value.trim();
+      const valueText = document.getElementById('override-value').value.trim();
+      const result = document.getElementById('override-result');
+      if (!keyName || !valueText) {
+        result.innerHTML = '<div class="notice">Please fill bill type, key name, and value.</div>';
+        return;
+      }
+      let value = valueText;
+      try { value = JSON.parse(valueText); } catch (e) {}
+      const res = await fetch('/api/admin/rates', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({bill_type: billType, key_name: keyName, value})
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        result.innerHTML = `<div class="notice">Save failed: ${data.error || res.status}</div>`;
+        return;
+      }
+      result.innerHTML = `<div class="notice">${data.message}</div>`;
+      loadRates();
+    }
+
+    async function saveSlabOverride() {
+      const state = document.getElementById('slab-state').value;
+      const consumerType = document.getElementById('slab-consumer-type').value;
+      const slabText = document.getElementById('slab-values').value.trim();
+      const result = document.getElementById('slab-result');
+      if (!slabText) {
+        result.innerHTML = '<div class="notice">Please enter slab JSON.</div>';
+        return;
+      }
+      let slabs;
+      try {
+        slabs = JSON.parse(slabText);
+        if (!Array.isArray(slabs) || !slabs.length) throw new Error('Invalid slab array');
+      } catch (err) {
+        result.innerHTML = `<div class="notice">Invalid JSON: ${err.message}</div>`;
+        return;
+      }
+      const res = await fetch('/api/admin/rates', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          bill_type: 'electricity_slabs',
+          key_name: `${state}::${consumerType}`,
+          value: slabs
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        result.innerHTML = `<div class="notice">Save failed: ${data.error || res.status}</div>`;
+        return;
+      }
+      result.innerHTML = `<div class="notice">${data.message}</div>`;
+      loadRates();
+    }
+
+    async function loadHistory() {
+      const el = document.getElementById('history');
+      el.innerHTML = '<div class="notice">Loading history…</div>';
+      try {
+        const res = await fetch('/api/history', { credentials: 'same-origin' });
+        if (!res.ok) {
+          const errorText = await res.text();
+          el.innerHTML = `<div class="notice">Unable to load history: ${res.status} ${res.statusText} ${errorText}</div>`;
+          return;
+        }
+        const history = await res.json();
+        if (!history.length) {
+          el.innerHTML = '<div class="notice">No calculation history found.</div>';
+          return;
+        }
+        const rows = history.map(item => {
+          const userLabel = item.user_email ? `${item.user_name || item.user_email} (${item.user_email})` : (item.user_id || '-');
+          return `
+            <tr>
+              <td>${item.bill_type}</td>
+              <td>₹${parseFloat(item.amount).toFixed(2)}</td>
+              <td>${item.timestamp ? new Date(item.timestamp).toLocaleString() : '-'}</td>
+              <td>${userLabel}</td>
+              <td><pre style="margin:0;font-size:0.95rem;">${JSON.stringify(item.details)}</pre></td>
+            </tr>
+          `;
+        }).join('');
+        el.innerHTML = `
+          <div class="notice" style="padding:0;border:none;box-shadow:none;">
+            <table>
+              <thead><tr><th>Type</th><th>Amount</th><th>When</th><th>User</th><th>Details</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+      } catch (err) {
+        el.innerHTML = `<div class="notice">Error loading history: ${err.message}</div>`;
+      }
+    }
+
+    loadUsers();
+    loadRates();
+    loadHistory();
+  </script>
+</body>
+</html>

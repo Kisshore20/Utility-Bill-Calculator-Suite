@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Utility Bill Calculator Suite</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --neon-cyan: #0077ff;
+            --neon-pink: #d9045b;
+            --neon-gold: #e6b800;
+            --neon-green: #0fa104;
+            --neon-purple: #9026bf;
+            --dark-base: #ffffff;
+            --glass: rgba(0, 0, 0, 0.04);
+            --glass-border: rgba(0, 119, 255, 0.2);
+            --card-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-base);
+            color: #111111;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── 3D ANTIGRAVITY CANVAS ── */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── LAYOUT ── */
+        .site-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ── */
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            position: relative;
+        }
+
+        .logo-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--neon-cyan);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 119, 255, 0.2), inset 0 0 10px rgba(0, 119, 255, 0.1);
+            animation: spinRing 8s linear infinite;
+            font-size: 32px;
+        }
+
+        @keyframes spinRing {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        h1.site-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.6rem, 4vw, 3rem);
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink), var(--neon-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            margin-bottom: 10px;
+        }
+
+        .site-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            color: rgba(0, 119, 255, 0.7);
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+        }
+
+        /* ── TABS ── */
+        .tab-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 0 20px 40px;
+        }
+
+        .tab-btn {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            padding: 12px 24px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            color: rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tab-btn:hover::before,
+        .tab-btn.active::before {
+            opacity: 0.15;
+        }
+
+        .tab-btn.active {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 119, 255, 0.2), inset 0 0 5px rgba(0, 119, 255, 0.05);
+        }
+
+        .tab-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeSlide 0.4s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── FORM CARDS ── */
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media(max-width: 700px) {
+            .calc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-card,
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 0 1px var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        }
+
+        .card-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            color: var(--neon-cyan);
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* ── INPUTS ── */
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            color: rgba(0, 0, 0, 0.7);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: rgba(240, 240, 245, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #111111;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            appearance: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 119, 255, 0.2);
+        }
+
+        select option {
+            background: #ffffff;
+        }
+
+        /* ── RANGE SLIDER ── */
+        input[type=range] {
+            padding: 0;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+            cursor: pointer;
+        }
+
+        .range-val {
+            text-align: right;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            color: var(--neon-gold);
+            margin-top: 6px;
+        }
+
+        /* ── CALCULATE BUTTON ── */
+        .calc-btn {
+            width: 100%;
+            padding: 16px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+            font-weight: 700;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            margin-top: 8px;
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.15), rgba(255, 0, 110, 0.15));
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            transition: all 0.3s;
+        }
+
+        .calc-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.3), rgba(255, 0, 110, 0.25));
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .calc-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── RESULT CARD ── */
+        .result-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-card::before {
+            background: linear-gradient(90deg, transparent, var(--neon-pink), transparent);
+        }
+
+        .result-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            gap: 16px;
+            padding: 40px 0;
+        }
+
+        .result-placeholder .ph-icon {
+            font-size: 4rem;
+        }
+
+        .result-placeholder p {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .result-content {
+            display: none;
+        }
+
+        .total-amount {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            text-align: center;
+            padding: 24px 0;
+            background: linear-gradient(135deg, var(--neon-gold), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .amount-label {
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 3px;
+            color: rgba(0, 0, 0, 0.5);
+            margin-top: -18px;
+            margin-bottom: 24px;
+        }
+
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-bottom: 20px;
+        }
+
+        .breakdown-table th {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: rgba(0, 0, 0, 0.5);
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .breakdown-table td {
+            padding: 10px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            color: #333333;
+        }
+
+        .breakdown-table tr:hover td {
+            background: rgba(0, 119, 255, 0.04);
+        }
+
+        .summary-rows {
+            margin-bottom: 16px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .summary-row .lbl {
+            color: rgba(50, 50, 50, 0.7);
+        }
+
+        .summary-row .val {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+        }
+
+        .summary-row.total-row {
+            border-top: 2px solid var(--neon-cyan);
+            border-bottom: none;
+            margin-top: 8px;
+            padding-top: 12px;
+        }
+
+        .summary-row.total-row .lbl {
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .summary-row.total-row .val {
+            color: var(--neon-gold);
+            font-size: 1rem;
+        }
+
+        .due-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 0, 110, 0.1);
+            border: 1px solid rgba(255, 0, 110, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            color: #ff6ba8;
+            margin-top: 16px;
+        }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1rem, 3vw, 1.6rem);
+            letter-spacing: 4px;
+            color: var(--neon-cyan);
+            margin-bottom: 8px;
+        }
+
+        .section-header p {
+            color: rgba(0, 0, 0, 0.5);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        /* ── NEON DIVIDER ── */
+        .neon-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            margin: 40px 0;
+            opacity: 0.3;
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 20, 50, 0.95);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 14px 22px;
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            z-index: 999;
+            transform: translateY(100px);
+            transition: transform 0.4s;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+        }
+
+        #toast.show {
+            transform: translateY(0);
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 245, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* ── PULSE LOADING ── */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: var(--neon-cyan);
+        }
+
+        .dot-pulse {
+            display: inline-flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .dot-pulse span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            animation: pulse 1.4s infinite;
+        }
+
+        .dot-pulse span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dot-pulse span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.3;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ── CORNER DECORATIONS ── */
+        .corner-deco {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+        }
+
+        .corner-deco.tl {
+            top: 8px;
+            left: 8px;
+            border-top: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+        }
+
+        .corner-deco.tr {
+            top: 8px;
+            right: 8px;
+            border-top: 2px solid var(--neon-cyan);
+            border-right: 2px solid var(--neon-cyan);
+        }
+
+        .corner-deco.bl {
+            bottom: 8px;
+            left: 8px;
+            border-bottom: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+        }
+
+        .corner-deco.br {
+            bottom: 8px;
+            right: 8px;
+            border-bottom: 2px solid var(--neon-cyan);
+            border-right: 2px solid var(--neon-cyan);
+        }
+
+        /* ── CHECKOUT MODAL ── */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(0, 119, 255, 0.15);
+            position: relative;
+            transform: translateY(30px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-backdrop.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: rgba(0, 0, 0, 0.4);
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--neon-pink);
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .pay-opt-btn {
+            background: rgba(240, 240, 245, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-align: center;
+            transition: all 0.3s;
+            color: #111;
+        }
+
+        .pay-opt-btn.active, .pay-opt-btn:hover {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+            background: rgba(0, 119, 255, 0.05);
+        }
+
+        .pay-method-panel {
+            display: none;
+            margin-top: 15px;
+            animation: fadeSlide 0.3s ease;
+        }
+
+        .pay-method-panel.active {
+            display: block;
+        }
+
+        /* Card layout */
+        .card-preview-wrapper {
+            perspective: 1000px;
+            margin-bottom: 20px;
+        }
+
+        .card-preview {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border-radius: 12px;
+            padding: 20px;
+            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-preview .chip {
+            width: 35px;
+            height: 25px;
+            background: #ffcc00;
+            border-radius: 4px;
+            opacity: 0.8;
+        }
+
+        .card-preview .number {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+
+        .card-preview .details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+
+        /* UPI scan */
+        .upi-qr-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .upi-qr-placeholder svg {
+            width: 120px;
+            height: 120px;
+        }
+
+        .bank-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bank-btn {
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(240, 240, 245, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            color: #111;
+        }
+
+        .bank-btn:hover, .bank-btn.active {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 119, 255, 0.05);
+        }
+
+        /* Payment processing */
+        .payment-processing {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .payment-success {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 0;
+            text-align: center;
+            animation: fadeSlide 0.4s ease;
+        }
+
+        .success-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(15, 161, 4, 0.1);
+            border: 3px solid var(--neon-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--neon-green);
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(15, 161, 4, 0.3);
+        }
+
+        /* Pay Now styling in UI */
+        .pay-now-badge-btn {
+            background: linear-gradient(135deg, var(--neon-pink), #ff4d94);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 14px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(217, 4, 91, 0.3);
+        }
+
+        .pay-now-badge-btn:hover {
+            box-shadow: 0 0 15px rgba(217, 4, 91, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .paid-badge {
+            background: rgba(15, 161, 4, 0.1);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .unpaid-badge {
+            background: rgba(217, 4, 91, 0.1);
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ════ 3D ANTIGRAVITY CANVAS ════ -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="site-wrapper">
+
+        <!-- ════ HEADER ════ -->
+        <header>
+            <div class="logo-ring">⚡</div>
+            <h1 class="site-title">UTILITY BILL CALCULATOR SUITE</h1>
+            <p class="site-subtitle">// ELECTRICITY · WATER · GAS · INTERNET //</p>
+            {% if session.get('user_id') %}
+            <div style="position:absolute;top:18px;right:20px;display:flex;gap:12px;align-items:center;">
+                <div style="font-family:'Share Tech Mono',monospace;color:rgba(0,0,0,0.6);font-size:0.9rem;">Hello, {{ session.get('name') }}</div>
+                <a href="/logout" style="padding:8px 12px;border:1px solid rgba(0,119,255,0.15);border-radius:8px;background:transparent;color:#0077ff;text-decoration:none;font-family:'Orbitron',monospace;font-size:0.8rem;">LOGOUT</a>
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- ════ TAB BAR ════ -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('electricity',this)">
+                <span>⚡ ELECTRICITY</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('water',this)">
+                <span>💧 WATER</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('gas',this)">
+                <span>🔥 GAS / LPG</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('internet',this)">
+                <span>📡 INTERNET</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('history',this)">
+                <span>📜 HISTORY</span>
+            </button>
+        </div>
+
+        <div class="container">
+
+            <!-- ════════════════════════════════════
+         ELECTRICITY PANEL
+    ════════════════════════════════════ -->
+            <div id="panel-electricity" class="panel active">
+                <div class="section-header">
+                    <h2>ELECTRICITY BILL CALCULATOR</h2>
+                    <p>// SLAB-RATE BASED CALCULATION WITH DUTY & FIXED CHARGES //</p>
+                </div>
+                <div class="calc-grid">
+                    <div class="form-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">⚡</span> INPUT PARAMETERS</div>
+
+                        <div class="field">
+                            <label>STATE</label>
+                            <select id="elec-state">
+                                <option>Tamil Nadu</option>
+                                <option>Karnataka</option>
+                                <option>Maharashtra</option>
+                                <option>Delhi</option>
+                                <option>Uttar Pradesh</option>
+                                <option>Gujarat</option>
+                                <option>Rajasthan</option>
+                                <option>Punjab</option>
+                                <option>Haryana</option>
+                                <option>Bihar</option>
+                                <option>West Bengal</option>
+                                <option>Assam</option>
+                                <option>Telangana</option>
+                                <option>Madhya Pradesh</option>
+                                <option>Chhattisgarh</option>
+                                <option>Jharkhand</option>
+                                <option>Odisha</option>
+                                <option>Kerala</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>CONSUMER TYPE</label>
+                            <select id="elec-type">
+                                <option value="domestic">Domestic</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>UNITS CONSUMED (kWh)</label>
+                            <input type="range" id="elec-units-slider" min="0" max="1000" value="250" step="5"
+                                oninput="document.getElementById('elec-units').value=this.value; document.getElementById('elec-units-val').textContent=this.value+' kWh'" />
+                            <div class="range-val" id="elec-units-val">250 kWh</div>
+                            <input type="number" id="elec-units" value="250" min="0" placeholder="Enter units"
+                                oninput="document.getElementById('elec-units-slider').value=this.value; document.getElementById('elec-units-val').textContent=this.value+' kWh'" />
+                        </div>
+
+                        <button class="calc-btn" onclick="calcElectricity()">CALCULATE BILL ▶</button>
+                    </div>
+
+                    <div class="result-card" id="elec-result-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">📊</span> BILL SUMMARY</div>
+                        <div class="result-placeholder" id="elec-placeholder">
+                            <div class="ph-icon">⚡</div>
+                            <p>ENTER VALUES & CALCULATE</p>
+                        </div>
+                        <div class="loading" id="elec-loading">COMPUTING<div class="dot-pulse">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <div class="result-content" id="elec-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════
+         WATER PANEL
+    ════════════════════════════════════ -->
+            <div id="panel-water" class="panel">
+                <div class="section-header">
+                    <h2>WATER BILL CALCULATOR</h2>
+                    <p>// KL-BASED SLAB WITH SEWERAGE & SERVICE CHARGES //</p>
+                </div>
+                <div class="calc-grid">
+                    <div class="form-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">💧</span> INPUT PARAMETERS</div>
+
+                        <div class="field">
+                            <label>CITY</label>
+                            <select id="water-city">
+                                <option>Coimbatore</option>
+                                <option>Chennai</option>
+                                <option>Bangalore</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>CONNECTION TYPE</label>
+                            <select id="water-conn">
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>WATER CONSUMED (KILOLITERS)</label>
+                            <input type="range" id="water-kl-slider" min="0" max="100" value="20" step="1"
+                                oninput="document.getElementById('water-kl').value=this.value; document.getElementById('water-kl-val').textContent=this.value+' KL'" />
+                            <div class="range-val" id="water-kl-val">20 KL</div>
+                            <input type="number" id="water-kl" value="20" min="0" placeholder="Enter kiloliters"
+                                oninput="document.getElementById('water-kl-slider').value=this.value; document.getElementById('water-kl-val').textContent=this.value+' KL'" />
+                        </div>
+
+                        <button class="calc-btn" onclick="calcWater()">CALCULATE BILL ▶</button>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">📊</span> BILL SUMMARY</div>
+                        <div class="result-placeholder" id="water-placeholder">
+                            <div class="ph-icon">💧</div>
+                            <p>ENTER VALUES & CALCULATE</p>
+                        </div>
+                        <div class="loading" id="water-loading">COMPUTING<div class="dot-pulse">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <div class="result-content" id="water-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════
+         GAS PANEL
+    ════════════════════════════════════ -->
+            <div id="panel-gas" class="panel">
+                <div class="section-header">
+                    <h2>LPG / GAS BILL CALCULATOR</h2>
+                    <p>// CYLINDER-WISE PRICING WITH SUBSIDY DEDUCTION //</p>
+                </div>
+                <div class="calc-grid">
+                    <div class="form-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">🔥</span> INPUT PARAMETERS</div>
+
+                        <div class="field">
+                            <label>CYLINDER TYPE</label>
+                            <select id="gas-type">
+                                <option value="domestic_14kg">Domestic 14.2 kg</option>
+                                <option value="domestic_5kg">Domestic 5 kg</option>
+                                <option value="commercial_19kg">Commercial 19 kg</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>NUMBER OF CYLINDERS</label>
+                            <input type="range" id="gas-cyl-slider" min="1" max="12" value="1" step="1"
+                                oninput="document.getElementById('gas-cyl').value=this.value; document.getElementById('gas-cyl-val').textContent=this.value+' CYL'" />
+                            <div class="range-val" id="gas-cyl-val">1 CYL</div>
+                            <input type="number" id="gas-cyl" value="1" min="1" max="24" placeholder="No. of cylinders"
+                                oninput="document.getElementById('gas-cyl-slider').value=this.value; document.getElementById('gas-cyl-val').textContent=this.value+' CYL'" />
+                        </div>
+
+                        <button class="calc-btn" onclick="calcGas()">CALCULATE BILL ▶</button>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">📊</span> BILL SUMMARY</div>
+                        <div class="result-placeholder" id="gas-placeholder">
+                            <div class="ph-icon">🔥</div>
+                            <p>ENTER VALUES & CALCULATE</p>
+                        </div>
+                        <div class="loading" id="gas-loading">COMPUTING<div class="dot-pulse">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <div class="result-content" id="gas-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════
+         INTERNET PANEL
+    ════════════════════════════════════ -->
+            <div id="panel-internet" class="panel">
+                <div class="section-header">
+                    <h2>INTERNET BILL CALCULATOR</h2>
+                    <p>// ISP PLAN-BASED WITH GST & MULTI-MONTH DISCOUNTS //</p>
+                </div>
+                <div class="calc-grid">
+                    <div class="form-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">📡</span> INPUT PARAMETERS</div>
+
+                        <div class="field">
+                            <label>SERVICE PROVIDER</label>
+                            <select id="net-provider" onchange="loadPlans()">
+                                <option>BSNL</option>
+                                <option>Jio Fiber</option>
+                                <option>ACT Fibernet</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>PLAN</label>
+                            <select id="net-plan"></select>
+                        </div>
+
+                        <div class="field">
+                            <label>BILLING PERIOD (MONTHS)</label>
+                            <input type="range" id="net-months-slider" min="1" max="12" value="1" step="1"
+                                oninput="document.getElementById('net-months').value=this.value; document.getElementById('net-months-val').textContent=this.value+' MONTH'+(this.value>1?'S':'')" />
+                            <div class="range-val" id="net-months-val">1 MONTH</div>
+                            <input type="number" id="net-months" value="1" min="1" max="12"
+                                oninput="document.getElementById('net-months-slider').value=this.value; document.getElementById('net-months-val').textContent=this.value+' MONTH'+(this.value>1?'S':'')" />
+                        </div>
+
+                        <button class="calc-btn" onclick="calcInternet()">CALCULATE BILL ▶</button>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="card-title"><span class="icon">📊</span> BILL SUMMARY</div>
+                        <div class="result-placeholder" id="net-placeholder">
+                            <div class="ph-icon">📡</div>
+                            <p>ENTER VALUES & CALCULATE</p>
+                        </div>
+                        <div class="loading" id="net-loading">COMPUTING<div class="dot-pulse">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <div class="result-content" id="net-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════
+         HISTORY PANEL
+    ════════════════════════════════════ -->
+            <div id="panel-history" class="panel">
+                <div class="section-header">
+                    <h2>CALCULATION HISTORY</h2>
+                    <p>// PAST BILLS SAVED SECURELY //</p>
+                </div>
+                <div id="history-container" style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- History cards will be injected here -->
+                    <div class="result-placeholder">
+                        <div class="ph-icon">📜</div>
+                        <p>LOADING HISTORY...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /container -->
+    </div><!-- /site-wrapper -->
+
+    <!-- ════ CHECKOUT MODAL ════ -->
+    <div id="checkout-modal" class="modal-backdrop" onclick="if(event.target === this) closeCheckout()">
+        <div class="modal-content">
+            <div class="corner-deco tl"></div>
+            <div class="corner-deco tr"></div>
+            <div class="corner-deco bl"></div>
+            <div class="corner-deco br"></div>
+            <button class="modal-close" onclick="closeCheckout()">&times;</button>
+            
+            <!-- Standard Checkout Screen -->
+            <div id="checkout-form-screen">
+                <h3 style="font-family:'Orbitron',monospace; font-size:1.1rem; letter-spacing:2px; color:var(--neon-cyan); margin-bottom:6px;">SECURE CHECKOUT</h3>
+                <p id="checkout-biller" style="font-family:'Share Tech Mono',monospace; font-size:0.8rem; color:rgba(0,0,0,0.6); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px; border-bottom:1px dashed var(--glass-border); padding-bottom:8px;">BILLER: TANGEDCO</p>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <span style="font-family:'Rajdhani',sans-serif; font-weight:700; color:#111; font-size:1rem;">Amount Payable:</span>
+                    <span id="checkout-amount" style="font-family:'Orbitron',monospace; font-weight:900; color:var(--neon-gold); font-size:1.4rem;">₹0.00</span>
+                </div>
+                
+                <label>SELECT PAYMENT METHOD</label>
+                <div class="payment-options">
+                    <button class="pay-opt-btn active" onclick="setPaymentMethod('upi', this)">UPI</button>
+                    <button class="pay-opt-btn" onclick="setPaymentMethod('card', this)">CARD</button>
+                    <button class="pay-opt-btn" onclick="setPaymentMethod('netbank', this)">NET BANK</button>
+                    <button class="pay-opt-btn" onclick="setPaymentMethod('wallet', this)">WALLET</button>
+                </div>
+                
+                <!-- UPI Panel -->
+                <div id="pay-panel-upi" class="pay-method-panel active">
+                    <div class="upi-qr-placeholder">
+                        <svg viewBox="0 0 100 100">
+                            <!-- A beautiful simulated vector QR code -->
+                            <rect x="10" y="10" width="25" height="25" fill="none" stroke="#111" stroke-width="6"/>
+                            <rect x="16" y="16" width="13" height="13" fill="#111"/>
+                            <rect x="65" y="10" width="25" height="25" fill="none" stroke="#111" stroke-width="6"/>
+                            <rect x="71" y="16" width="13" height="13" fill="#111"/>
+                            <rect x="10" y="65" width="25" height="25" fill="none" stroke="#111" stroke-width="6"/>
+                            <rect x="16" y="71" width="13" height="13" fill="#111"/>
+                            <rect x="45" y="45" width="10" height="10" fill="#0077ff"/>
+                            <rect x="40" y="15" width="6" height="6" fill="#111"/>
+                            <rect x="50" y="25" width="6" height="6" fill="#111"/>
+                            <rect x="45" y="10" width="6" height="6" fill="#111"/>
+                            <rect x="15" y="45" width="6" height="6" fill="#111"/>
+                            <rect x="25" y="50" width="6" height="6" fill="#111"/>
+                            <rect x="70" y="45" width="6" height="6" fill="#111"/>
+                            <rect x="80" y="55" width="6" height="6" fill="#111"/>
+                            <rect x="65" y="75" width="6" height="6" fill="#111"/>
+                            <rect x="75" y="65" width="6" height="12" fill="#111"/>
+                            <rect x="85" y="80" width="6" height="6" fill="#111"/>
+                            <rect x="45" y="75" width="6" height="6" fill="#111"/>
+                            <rect x="55" y="85" width="6" height="6" fill="#111"/>
+                        </svg>
+                        <p style="font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:rgba(0,0,0,0.5); margin-top:8px; letter-spacing:1px;">SCAN QR WITH ANY UPI APP</p>
+                    </div>
+                    <div class="field">
+                        <label>OR ENTER UPI ID</label>
+                        <input type="text" id="upi-id" placeholder="username@upi" style="font-family:'Share Tech Mono',monospace;" value="user@okaxis"/>
+                    </div>
+                </div>
+                
+                <!-- CARD Panel -->
+                <div id="pay-panel-card" class="pay-method-panel">
+                    <div class="card-preview-wrapper">
+                        <div class="card-preview">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.75rem; letter-spacing:1px; opacity:0.8;">PREMIUM DEBIT CARD</span>
+                                <div class="chip"></div>
+                            </div>
+                            <div class="number" id="preview-card-num">•••• •••• •••• ••••</div>
+                            <div class="details">
+                                <div>
+                                    <div style="font-size:0.5rem; opacity:0.6; margin-bottom:2px;">CARD HOLDER</div>
+                                    <div id="preview-card-holder" style="text-transform:uppercase;">YOUR NAME</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.5rem; opacity:0.6; margin-bottom:2px;">EXPIRES</div>
+                                    <div id="preview-card-expiry">MM/YY</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>CARD NUMBER</label>
+                        <input type="text" id="card-num" placeholder="4111 2222 3333 4444" maxlength="19"/>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                        <div class="field">
+                            <label>EXPIRY DATE</label>
+                            <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5"/>
+                        </div>
+                        <div class="field">
+                            <label>CVV</label>
+                            <input type="password" id="card-cvv" placeholder="•••" maxlength="3"/>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>CARDHOLDER NAME</label>
+                        <input type="text" id="card-holder" placeholder="Nethya Shree"/>
+                    </div>
+                </div>
+                
+                <!-- Net Banking Panel -->
+                <div id="pay-panel-netbank" class="pay-method-panel">
+                    <label style="margin-bottom:12px; display:block;">SELECT POPULAR BANK</label>
+                    <div class="bank-grid">
+                        <button class="bank-btn active" onclick="selectBank('sbi', this)">State Bank of India</button>
+                        <button class="bank-btn" onclick="selectBank('hdfc', this)">HDFC Bank</button>
+                        <button class="bank-btn" onclick="selectBank('icici', this)">ICICI Bank</button>
+                        <button class="bank-btn" onclick="selectBank('axis', this)">Axis Bank</button>
+                    </div>
+                    <div class="field">
+                        <label>OR SEARCH OTHER BANK</label>
+                        <select id="other-bank-select">
+                            <option>Kotak Mahindra Bank</option>
+                            <option>Punjab National Bank</option>
+                            <option>Canara Bank</option>
+                            <option>Union Bank of India</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Wallets Panel -->
+                <div id="pay-panel-wallet" class="pay-method-panel">
+                    <label style="margin-bottom:12px; display:block;">SELECT WALLET PROVIDER</label>
+                    <div class="bank-grid">
+                        <button class="bank-btn active" onclick="selectWallet('paytm', this)">Paytm Wallet</button>
+                        <button class="bank-btn" onclick="selectWallet('phonepe', this)">PhonePe Wallet</button>
+                        <button class="bank-btn" onclick="selectWallet('amazon', this)">Amazon Pay</button>
+                        <button class="bank-btn" onclick="selectWallet('mobikwik', this)">MobiKwik</button>
+                    </div>
+                </div>
+                
+                <button class="calc-btn" style="margin-top:20px; border-color:var(--neon-green); color:var(--neon-green); background:rgba(15,161,4,0.05);" onclick="processPayment()">
+                    AUTHORIZE PAYMENT ▶
+                </button>
+            </div>
+            
+            <!-- Payment Processing Screen -->
+            <div id="checkout-processing-screen" class="payment-processing">
+                <div class="loading" style="display:block;">
+                    <div class="dot-pulse" style="margin-bottom:20px; scale: 1.5;">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div id="payment-step-text" style="font-family:'Orbitron',monospace; font-size:0.8rem; letter-spacing:2px; color:var(--neon-cyan);">CONNECTING TO PAYMENT GATEWAY...</div>
+                </div>
+            </div>
+            
+            <!-- Payment Success Screen -->
+            <div id="checkout-success-screen" class="payment-success">
+                <div class="success-icon">✓</div>
+                <h3 style="font-family:'Orbitron',monospace; color:var(--neon-green); letter-spacing:2px; margin-bottom:12px;">PAYMENT SUCCESSFUL!</h3>
+                <p id="success-message" style="font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:600; color:#333; margin-bottom:20px;">Your bill has been paid to TANGEDCO.</p>
+                <div style="background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05); border-radius:8px; padding:15px; width:100%; text-align:left; font-family:'Share Tech Mono',monospace; font-size:0.8rem; line-height:1.6; margin-bottom:25px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="color:rgba(0,0,0,0.5);">Txn Ref:</span><span id="success-txn-id" style="color:var(--neon-cyan); font-weight:bold;">TXN0000000000</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:rgba(0,0,0,0.5);">Paid Via:</span><span id="success-method" style="text-transform:uppercase;">UPI</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:rgba(0,0,0,0.5);">Amount:</span><span id="success-amount" style="color:var(--neon-gold); font-weight:bold;">₹0.00</span></div>
+                </div>
+                <button class="calc-btn" style="border-color:var(--neon-cyan); color:var(--neon-cyan); margin-top:0;" onclick="closeCheckout()">
+                    RETURN TO DASHBOARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"></div>
+
+    <script>
+        /* ══════════════════════════════════════════════════════════
+           3D ANTIGRAVITY PARTICLE BACKGROUND (cursor-reactive)
+        ══════════════════════════════════════════════════════════ */
+        (function () {
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let W, H;
+            const GAP = 40; // distance between dots
+
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            let t = 0;
+
+            function animate() {
+                ctx.clearRect(0, 0, W, H);
+
+                // background
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, W, H);
+
+                for (let x = 0; x < W; x += GAP) {
+                    for (let y = 0; y < H; y += GAP) {
+
+                        // WAVE EFFECT
+                        let wave = Math.sin((x + t) * 0.01) * 10;
+
+                        let px = x;
+                        let py = y + wave;
+
+                        // color gradient like image 1
+                        let hue = (x / W) * 360;
+
+                        ctx.beginPath();
+                        ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                        ctx.fill();
+                    }
+                }
+
+                t += 2; // animation speed
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        })();
+
+        /* ══════════════════════════════════════════════════════════
+           TAB SWITCHING
+        ════════════════════════════════════════        // Biller mapping registry
+        const BILLER_MAPPING = {
+            electricity: {
+                "Tamil Nadu": "TANGEDCO (Tamil Nadu Electricity Board)",
+                "Karnataka": "BESCOM (Bangalore Electricity Supply)",
+                "Maharashtra": "MSEDCL (Maharashtra State Electricity)",
+                "Delhi": "BSES Rajdhani Power",
+                "Uttar Pradesh": "UPPCL (Uttar Pradesh Power Corp)",
+                "Gujarat": "DGVCL (Dakshin Gujarat Vij)",
+                "Rajasthan": "JVVNL (Jaipur Vidyut Vitran)",
+                "Punjab": "PSPCL (Punjab State Power Corp)",
+                "Haryana": "DHBVN (Dakshin Haryana Bijli)",
+                "Bihar": "SBPDCL (South Bihar Power)",
+                "West Bengal": "WBSEDCL (West Bengal State Electricity)",
+                "Assam": "APDCL (Assam Power Distribution)",
+                "Telangana": "TSSPDCL (Southern Power Telangana)",
+                "Madhya Pradesh": "MPPKVVCL (M.P. Poorv Kshetra)",
+                "Chhattisgarh": "CSPDCL (Chhattisgarh State Power)",
+                "Jharkhand": "JBVNL (Jharkhand Bijli)",
+                "Odisha": "TPCODL (TP Central Odisha)",
+                "Kerala": "KSEB (Kerala State Electricity Board)",
+                "Default": "National Power Grid Commission"
+            },
+            water: {
+                "Coimbatore": "Coimbatore Corporation Water Supply",
+                "Chennai": "CMWSSB (Chennai Water)",
+                "Bangalore": "BWSSB (Bangalore Water Supply)",
+                "Default": "Municipal Water Supply Board"
+            },
+            gas: {
+                "domestic_14kg": "Indane Gas (Indian Oil Corporation)",
+                "domestic_5kg": "HP Gas (Hindustan Petroleum)",
+                "commercial_19kg": "Bharat Gas (Bharat Petroleum)",
+                "Default": "LPG Distributor Alliance"
+            },
+            internet: {
+                "BSNL": "BSNL Broadband & FTTH",
+                "Jio Fiber": "Reliance Jio Infocomm Ltd.",
+                "ACT Fibernet": "ACT Fibernet Broadband",
+                "Default": "Internet Services Provider"
+            }
+        };
+
+        function getBillerName(billType, details) {
+            if (!details) return "Regional Utility Board";
+            const mapper = BILLER_MAPPING[billType];
+            if (!mapper) return "Regional Biller Office";
+            
+            if (billType === 'electricity') {
+                return mapper[details.state] || mapper["Default"];
+            } else if (billType === 'water') {
+                return mapper[details.city] || mapper["Default"];
+            } else if (billType === 'gas') {
+                return mapper[details.cylinder_type] || mapper["Default"];
+            } else if (billType === 'internet') {
+                return mapper[details.provider] || mapper["Default"];
+            }
+            return "Regional Utility Board";
+        }
+
+        // Global storage for session records to avoid string quoting issues in inline onclicks
+        const activeBills = {};
+        
+        function registerActiveBill(hid, billType, amount, details) {
+            activeBills[hid] = { billType, amount, details };
+        }
+
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = `<div class="loading" style="display:block">LOADING HISTORY<div class="dot-pulse"><span></span><span></span><span></span></div></div>`;
+            try {
+                const res = await fetch('/api/history', { credentials: 'same-origin' });
+                if (!res.ok) {
+                    let message = res.statusText;
+                    try { const errorBody = await res.json(); message = errorBody.error || JSON.stringify(errorBody); } catch {}
+                    container.innerHTML = `<div class="result-placeholder" style="display:flex"><div class="ph-icon">⚠️</div><p>ERROR LOADING HISTORY: ${message}</p></div>`;
+                    return;
+                }
+                const data = await res.json();
+                if (!data.length) {
+                    container.innerHTML = `<div class="result-placeholder" style="display:flex"><div class="ph-icon">📜</div><p>NO HISTORY FOUND</p></div>`;
+                    return;
+                }
+                let html = '';
+                data.forEach(item => {
+                    registerActiveBill(item.id, item.bill_type, item.amount, item.details);
+                    
+                    const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : '-';
+                    const biller = getBillerName(item.bill_type, item.details);
+                    
+                    let statusHtml = '';
+                    if (item.status === 'PAID') {
+                        const payInfo = item.details.payment || {};
+                        statusHtml = `
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <span class="paid-badge">✓ PAID</span>
+                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:rgba(0,0,0,0.5);">Ref: ${payInfo.txn_id || 'N/A'}</span>
+                        </div>`;
+                    } else {
+                        statusHtml = `
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <span class="unpaid-badge">UNPAID</span>
+                            <button class="pay-now-badge-btn" onclick="openCheckout(${item.id})">PAY NOW ▶</button>
+                        </div>`;
+                    }
+                    
+                    html += `
+                    <div class="result-card" style="padding: 24px; position:relative; overflow:hidden;">
+                        <div class="corner-deco tl"></div>
+                        <div class="corner-deco tr"></div>
+                        <div class="corner-deco bl"></div>
+                        <div class="corner-deco br"></div>
+                        <div class="summary-row" style="border-bottom: 1px solid var(--neon-cyan); padding-bottom: 12px; align-items: center;">
+                            <span style="font-family: 'Orbitron', monospace; color: var(--neon-cyan); font-weight: bold; font-size: 0.95rem;">${item.bill_type.toUpperCase()} BILL</span>
+                            <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: rgba(0,0,0,0.6);">${dateStr}</span>
+                        </div>
+                        <div style="margin-top: 14px; font-family:'Share Tech Mono',monospace; font-size: 0.8rem; color:rgba(0,0,0,0.7); text-transform: uppercase;">
+                            Biller: ${biller}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                            <div class="summary-rows" style="margin-bottom: 0; flex: 1;">
+                                ${summaryRow('Total Amount', fmt(item.amount), true)}
+                            </div>
+                            <div style="margin-left: 20px;">
+                                ${statusHtml}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<div class="result-placeholder" style="display:flex"><div class="ph-icon">⚠️</div><p>ERROR LOADING HISTORY: ${err.message}</p></div>`;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           RENDER HELPERS
+         ══════════════════════════════════════════════════════════ */
+        function fmt(n) { return '₹' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+        function showResult(id, html) {
+            document.getElementById(id + '-placeholder').style.display = 'none';
+            document.getElementById(id + '-loading').style.display = 'none';
+            const rc = document.getElementById(id + '-result');
+            rc.style.display = 'block';
+            rc.innerHTML = html;
+        }
+
+        function showLoading(id) {
+            document.getElementById(id + '-placeholder').style.display = 'none';
+            document.getElementById(id + '-loading').style.display = 'block';
+            document.getElementById(id + '-result').style.display = 'none';
+        }
+
+        function breakdownTable(rows) {
+            if (!rows || !rows.length) return '';
+            let html = `<table class="breakdown-table">
+    <tr><th>SLAB</th><th>UNITS/QTY</th><th>RATE</th><th>CHARGE</th></tr>`;
+            rows.forEach(r => {
+                html += `<tr>
+      <td>${r.range || ''}</td>
+      <td>${r.units ?? r.kiloliters ?? ''}</td>
+      <td>₹${r.rate}/unit</td>
+      <td>${fmt(r.charge)}</td>
+    </tr>`;
+            });
+            return html + '</table>';
+        }
+
+        function summaryRow(label, val, isTotal = false) {
+            return `<div class="summary-row${isTotal ? ' total-row' : ''}">
+    <span class="lbl">${label}</span>
+    <span class="val">${val}</span>
+  </div>`;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           ELECTRICITY
+         ══════════════════════════════════════════════════════════ */
+        async function calcElectricity() {
+            showLoading('elec');
+            const data = await postAPI('/api/electricity', {
+                units: document.getElementById('elec-units').value,
+                state: document.getElementById('elec-state').value,
+                consumer_type: document.getElementById('elec-type').value
+            });
+
+            const res = await postAPI('/api/history', { bill_type: 'electricity', amount: data.total, details: data });
+            registerActiveBill(res.id, 'electricity', data.total, data);
+            loadHistory();
+
+            const paySectionHtml = `
+            <div id="elec-pay-section" style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; align-items: center;">
+                <button class="pay-now-badge-btn" onclick="openCheckout(${res.id})">PAY ONLINE NOW ▶</button>
+            </div>`;
+
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">TOTAL BILL — ${data.state.toUpperCase()}</div>
+    ${breakdownTable(data.breakdown)}
+    <div class="summary-rows">
+      ${summaryRow('Energy Charges', fmt(data.energy_charge))}
+      ${summaryRow('Fixed Charge', fmt(data.fixed_charge))}
+      ${summaryRow('Electricity Duty (5%)', fmt(data.electricity_duty))}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>
+    ${paySectionHtml}`;
+
+            showResult('elec', html);
+            showToast('✓ Electricity bill calculated & saved!');
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           WATER
+         ══════════════════════════════════════════════════════════ */
+        async function calcWater() {
+            showLoading('water');
+            const data = await postAPI('/api/water', {
+                kiloliters: document.getElementById('water-kl').value,
+                city: document.getElementById('water-city').value,
+                connection_type: document.getElementById('water-conn').value
+            });
+
+            const res = await postAPI('/api/history', { bill_type: 'water', amount: data.total, details: data });
+            registerActiveBill(res.id, 'water', data.total, data);
+            loadHistory();
+
+            const paySectionHtml = `
+            <div id="water-pay-section" style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; align-items: center;">
+                <button class="pay-now-badge-btn" onclick="openCheckout(${res.id})">PAY ONLINE NOW ▶</button>
+            </div>`;
+
+            const bRows = data.breakdown.map(r => ({ range: r.range, units: r.kiloliters, rate: r.rate, charge: r.charge }));
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">TOTAL BILL — ${data.city.toUpperCase()}</div>
+    ${breakdownTable(bRows)}
+    <div class="summary-rows">
+      ${summaryRow('Water Charges', fmt(data.water_charge))}
+      ${summaryRow('Sewerage Charges (60%)', fmt(data.sewerage_charge))}
+      ${summaryRow('Service Charge', fmt(data.service_charge))}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>
+    ${paySectionHtml}`;
+
+            showResult('water', html);
+            showToast('✓ Water bill calculated & saved!');
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           GAS
+         ══════════════════════════════════════════════════════════ */
+        async function calcGas() {
+            showLoading('gas');
+            const data = await postAPI('/api/gas', {
+                cylinders: document.getElementById('gas-cyl').value,
+                cylinder_type: document.getElementById('gas-type').value
+            });
+
+            const res = await postAPI('/api/history', { bill_type: 'gas', amount: data.total, details: data });
+            registerActiveBill(res.id, 'gas', data.total, data);
+            loadHistory();
+
+            const paySectionHtml = `
+            <div id="gas-pay-section" style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; align-items: center;">
+                <button class="pay-now-badge-btn" onclick="openCheckout(${res.id})">PAY ONLINE NOW ▶</button>
+            </div>`;
+
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">${data.cylinder_label.toUpperCase()} × ${data.cylinders}</div>
+    <div class="summary-rows">
+      ${summaryRow('Base Price / Cylinder', fmt(data.base_price_per))}
+      ${summaryRow('No. of Cylinders', data.cylinders)}
+      ${summaryRow('Base Cost', fmt(data.base_cost))}
+      ${summaryRow('Govt. Subsidy', '- ' + fmt(data.subsidy))}
+      ${summaryRow('Delivery Charge', fmt(data.delivery_charge))}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>
+    ${paySectionHtml}`;
+
+            showResult('gas', html);
+            showToast('✓ Gas bill calculated & saved!');
+        }
+
+        /* ═════════════════════�        // Checkout Modal JS
+        let currentCheckoutId = null;
+        let currentPaymentMethod = 'upi';
+        let currentBank = 'sbi';
+        let currentWallet = 'paytm';
+
+        function openCheckout(hid) {
+            const bill = activeBills[hid];
+            if (!bill) {
+                showToast("⚠️ Bill details not found.");
+                return;
+            }
+            
+            currentCheckoutId = hid;
+            const biller = getBillerName(bill.billType, bill.details);
+            
+            document.getElementById('checkout-biller').textContent = `BILLER: ${biller}`;
+            document.getElementById('checkout-amount').textContent = fmt(bill.amount);
+            
+            // Reset screens
+            document.getElementById('checkout-form-screen').style.display = 'block';
+            document.getElementById('checkout-processing-screen').style.display = 'none';
+            document.getElementById('checkout-success-screen').style.display = 'none';
+            
+            // Show modal
+            const modal = document.getElementById('checkout-modal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+            
+            // Reset fields
+            document.getElementById('card-num').value = '';
+            document.getElementById('card-expiry').value = '';
+            document.getElementById('card-cvv').value = '';
+            document.getElementById('card-holder').value = '';
+            updateCardPreview();
+        }
+
+        function closeCheckout() {
+            const modal = document.getElementById('checkout-modal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function setPaymentMethod(method, btn) {
+            currentPaymentMethod = method;
+            document.querySelectorAll('.pay-opt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            document.querySelectorAll('.pay-method-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('pay-panel-' + method).classList.add('active');
+        }
+
+        function selectBank(bank, btn) {
+            currentBank = bank;
+            btn.parentNode.querySelectorAll('.bank-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function selectWallet(wallet, btn) {
+            currentWallet = wallet;
+            btn.parentNode.querySelectorAll('.bank-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function updateCardPreview() {
+            const num = document.getElementById('card-num').value.trim() || '•••• •••• •••• ••••';
+            const holder = document.getElementById('card-holder').value.trim() || 'YOUR NAME';
+            const expiry = document.getElementById('card-expiry').value.trim() || 'MM/YY';
+            
+            document.getElementById('preview-card-num').textContent = num;
+            document.getElementById('preview-card-holder').textContent = holder;
+            document.getElementById('preview-card-expiry').textContent = expiry;
+        }
+
+        async function processPayment() {
+            if (!currentCheckoutId) return;
+            const bill = activeBills[currentCheckoutId];
+            if (!bill) return;
+
+            // Simple validation depending on payment method
+            if (currentPaymentMethod === 'card') {
+                const num = document.getElementById('card-num').value;
+                const exp = document.getElementById('card-expiry').value;
+                const cvv = document.getElementById('card-cvv').value;
+                const holder = document.getElementById('card-holder').value;
+                if (num.length < 15 || exp.length < 5 || cvv.length < 3 || !holder) {
+                    showToast("⚠️ Please enter valid card details.");
+                    return;
+                }
+            } else if (currentPaymentMethod === 'upi') {
+                const upi = document.getElementById('upi-id').value;
+                if (!upi || !upi.includes('@')) {
+                    showToast("⚠️ Please enter a valid UPI ID.");
+                    return;
+                }
+            }
+
+            // Switch to processing screen
+            document.getElementById('checkout-form-screen').style.display = 'none';
+            document.getElementById('checkout-processing-screen').style.display = 'flex';
+            
+            const steps = [
+                "CONNECTING TO PAYMENT GATEWAY...",
+                "SECURING TRANSACTION PROTOCOL...",
+                "REQUESTING AUTHORIZATION FROM BANK...",
+                "VERIFYING TRANSACTION STATUS..."
+            ];
+            
+            const stepTextEl = document.getElementById('payment-step-text');
+            
+            for (let i = 0; i < steps.length; i++) {
+                stepTextEl.textContent = steps[i];
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
+            
+            // Call API
+            const biller = getBillerName(bill.billType, bill.details);
+            try {
+                const res = await postAPI(`/api/history/${currentCheckoutId}/pay`, {
+                    payment_method: currentPaymentMethod,
+                    biller: biller
+                });
+                
+                if (res.status === 'success') {
+                    // Update active bill record status
+                    bill.details.payment = {
+                        status: 'PAID',
+                        method: currentPaymentMethod,
+                        txn_id: res.txn_id,
+                        biller: biller
+                    };
+                    
+                    // Show success screen
+                    document.getElementById('checkout-processing-screen').style.display = 'none';
+                    document.getElementById('checkout-success-screen').style.display = 'flex';
+                    
+                    document.getElementById('success-message').textContent = `Your bill has been paid to ${biller}.`;
+                    document.getElementById('success-txn-id').textContent = res.txn_id;
+                    document.getElementById('success-method').textContent = currentPaymentMethod;
+                    document.getElementById('success-amount').textContent = fmt(bill.amount);
+                    
+                    // Update UI elements in active panels
+                    const panels = {
+                        electricity: 'elec',
+                        water: 'water',
+                        gas: 'gas',
+                        internet: 'net'
+                    };
+                    const prefix = panels[bill.billType];
+                    if (prefix) {
+                        const paySection = document.getElementById(`${prefix}-pay-section`);
+                        if (paySection) {
+                            paySection.innerHTML = `<span class="paid-badge">✓ PAID ONLINE via ${currentPaymentMethod.toUpperCase()}</span>`;
+                        }
+                    }
+                    
+                    showToast("✓ Payment Authorized Successfully!");
+                    loadHistory(); // Refresh history tab
+                } else {
+                    showToast("❌ Payment failed: " + (res.error || "Unknown Error"));
+                    document.getElementById('checkout-form-screen').style.display = 'block';
+                    document.getElementById('checkout-processing-screen').style.display = 'none';
+                }
+            } catch (err) {
+                showToast("❌ Connection error: " + err.message);
+                document.getElementById('checkout-form-screen').style.display = 'block';
+                document.getElementById('checkout-processing-screen').style.display = 'none';
+            }
+        }
+
+        // Initialize event listeners on page load
+        window.addEventListener('load', () => {
+            loadPlans();
+            
+            // Format card inputs
+            const cardNumInput = document.getElementById('card-num');
+            if (cardNumInput) {
+                cardNumInput.addEventListener('input', function (e) {
+                    let val = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                    let matches = val.match(/\d{4,16}/g);
+                    let match = matches && matches[0] || '';
+                    let parts = [];
+                    for (let i=0, len=match.length; i<len; i+=4) {
+                        parts.push(match.substring(i, i+4));
+                    }
+                    if (parts.length > 0) {
+                        e.target.value = parts.join(' ');
+                    } else {
+                        e.target.value = val;
+                    }
+                });
+            }
+
+            const cardExpiryInput = document.getElementById('card-expiry');
+            if (cardExpiryInput) {
+                cardExpiryInput.addEventListener('input', function (e) {
+                    let val = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                    if (val.length >= 2) {
+                        e.target.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+                    } else {
+                        e.target.value = val;
+                    }
+                });
+            }
+        });
+
+        async function calcGas() {
+            showLoading('gas');
+            const data = await postAPI('/api/gas', {
+                cylinders: document.getElementById('gas-cyl').value,
+                cylinder_type: document.getElementById('gas-type').value
+            });
+
+            const res = await postAPI('/api/history', { bill_type: 'gas', amount: data.total, details: data });
+            registerActiveBill(res.id, 'gas', data.total, data);
+            loadHistory();
+
+            const paySectionHtml = `
+            <div id="gas-pay-section" style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; align-items: center;">
+                <button class="pay-now-badge-btn" onclick="openCheckout(${res.id})">PAY ONLINE NOW ▶</button>
+            </div>`;
+
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">${data.cylinder_label.toUpperCase()} × ${data.cylinders}</div>
+    <div class="summary-rows">
+      ${summaryRow('Base Price / Cylinder', fmt(data.base_price_per))}
+      ${summaryRow('No. of Cylinders', data.cylinders)}
+      ${summaryRow('Base Cost', fmt(data.base_cost))}
+      ${summaryRow('Govt. Subsidy', '- ' + fmt(data.subsidy))}
+      ${summaryRow('Delivery Charge', fmt(data.delivery_charge))}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>
+    ${paySectionHtml}`;
+
+            showResult('gas', html);
+            showToast('✓ Gas bill calculated & saved!');
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           INTERNET
+         ══════════════════════════════════════════════════════════ */
+        async function loadPlans() {
+            const provider = document.getElementById('net-provider').value;
+            const res = await fetch(`/api/plans?provider=${encodeURIComponent(provider)}`);
+            const plans = await res.json();
+            const sel = document.getElementById('net-plan');
+            sel.innerHTML = '';
+            plans.forEach(p => { sel.innerHTML += `<option>${p}</option>`; });
+        }
+
+        async function calcInternet() {
+            showLoading('net');
+            const data = await postAPI('/api/internet', {
+                provider: document.getElementById('net-provider').value,
+                plan: document.getElementById('net-plan').value,
+                months: document.getElementById('net-months').value
+            });
+
+            const res = await postAPI('/api/history', { bill_type: 'internet', amount: data.total, details: data });
+            registerActiveBill(res.id, 'internet', data.total, data);
+            loadHistory();
+
+            const paySectionHtml = `
+            <div id="net-pay-section" style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; align-items: center;">
+                <button class="pay-now-badge-btn" onclick="openCheckout(${res.id})">PAY ONLINE NOW ▶</button>
+            </div>`;
+
+            const discount = data.discount > 0
+                ? summaryRow(`Multi-Month Discount`, '- ' + fmt(data.discount))
+                : '';
+
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">${data.provider.toUpperCase()} · ${data.plan.toUpperCase()}</div>
+    <div class="summary-rows">
+      ${summaryRow('Speed', data.speed)}
+      ${summaryRow('Data Limit', data.data)}
+      ${summaryRow('Monthly Rate', fmt(data.monthly_rate))}
+      ${summaryRow('Billing Period', data.months + ' Month' + (data.months > 1 ? 's' : ''))}
+      ${summaryRow('Base Cost', fmt(data.base_cost))}
+      ${summaryRow('GST (18%)', fmt(data.gst))}
+      ${discount}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>
+    ${paySectionHtml}`;
+
+            showResult('net', html);
+            showToast('✓ Internet bill calculated & saved!');
+        }
+
+        // Load internet plans on page load
+        window.addEventListener('load', loadPlans);
+    </script>
+</body>
+
+</html>html);
+            showToast('✓ Internet bill calculated & saved!');
+        }
+
+        // Load internet plans on page load
+        window.addEventListener('load', loadPlans);ass="summary-rows">
+      ${summaryRow('Base Price / Cylinder', fmt(data.base_price_per))}
+      ${summaryRow('No. of Cylinders', data.cylinders)}
+      ${summaryRow('Base Cost', fmt(data.base_cost))}
+      ${summaryRow('Govt. Subsidy', '- ' + fmt(data.subsidy))}
+      ${summaryRow('Delivery Charge', fmt(data.delivery_charge))}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>`;
+
+            showResult('gas', html);
+            showToast('✓ Gas bill calculated!');
+            saveHistory('gas', data.total, data);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           INTERNET
+        ══════════════════════════════════════════════════════════ */
+        async function loadPlans() {
+            const provider = document.getElementById('net-provider').value;
+            const res = await fetch(`/api/plans?provider=${encodeURIComponent(provider)}`);
+            const plans = await res.json();
+            const sel = document.getElementById('net-plan');
+            sel.innerHTML = '';
+            plans.forEach(p => { sel.innerHTML += `<option>${p}</option>`; });
+        }
+
+        async function calcInternet() {
+            showLoading('net');
+            const data = await postAPI('/api/internet', {
+                provider: document.getElementById('net-provider').value,
+                plan: document.getElementById('net-plan').value,
+                months: document.getElementById('net-months').value
+            });
+
+            const discount = data.discount > 0
+                ? summaryRow(`Multi-Month Discount`, '- ' + fmt(data.discount))
+                : '';
+
+            const html = `
+    <div class="total-amount">${fmt(data.total)}</div>
+    <div class="amount-label">${data.provider.toUpperCase()} · ${data.plan.toUpperCase()}</div>
+    <div class="summary-rows">
+      ${summaryRow('Speed', data.speed)}
+      ${summaryRow('Data Limit', data.data)}
+      ${summaryRow('Monthly Rate', fmt(data.monthly_rate))}
+      ${summaryRow('Billing Period', data.months + ' Month' + (data.months > 1 ? 's' : ''))}
+      ${summaryRow('Base Cost', fmt(data.base_cost))}
+      ${summaryRow('GST (18%)', fmt(data.gst))}
+      ${discount}
+      ${summaryRow('TOTAL PAYABLE', fmt(data.total), true)}
+    </div>
+    <div class="due-badge">📅 DUE DATE: ${data.due_date}</div>`;
+
+            showResult('net', html);
+            showToast('✓ Internet bill calculated!');
+            saveHistory('internet', data.total, data);
+        }
+
+        // Load internet plans on page load
+        window.addEventListener('load', loadPlans);
+    </script>
+</body>
+
+</html>
